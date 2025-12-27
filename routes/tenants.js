@@ -123,6 +123,32 @@ router.post(
   }
 );
 
+// @route   GET /api/tenants/slug/:tenantSlug
+// @desc    Get tenant by slug (Public - for n8n webhooks)
+router.get('/slug/:tenantSlug', async (req, res) => {
+  try {
+    const { tenantSlug } = req.params;
+    const tenant = await Tenant.findOne({ slug: tenantSlug, status: 'active' });
+    
+    if (!tenant) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+
+    // Return only necessary config for webhooks (no sensitive data)
+    res.json({
+      _id: tenant._id,
+      slug: tenant.slug,
+      name: tenant.name,
+      facebookConfig: tenant.facebookConfig,
+      instagramConfig: tenant.instagramConfig,
+      settings: tenant.settings,
+      aiConfig: tenant.aiConfig
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // @route   GET /api/tenants
 // @desc    Get all tenants (Super Admin) or user's tenants
 router.get('/', protect, async (req, res) => {
